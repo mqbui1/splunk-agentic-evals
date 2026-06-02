@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "splunk-agentic-evals"
+version = "0.1.0"
+description = "Custom eval emitter for Splunk AI Agent Monitoring — runs LLM-as-judge evals and emits gen_ai.evaluation.score metrics via OTel"
+requires-python = ">=3.11"
+dependencies = [
+    "opentelemetry-sdk>=1.24.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.24.0",
+    "boto3>=1.34.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.14",
+    "moto[bedrock]>=5.0",
+]
+agent = [
+    "strands-agents>=0.1.0",
+    "strands-agents-tools>=0.1.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["splunk_agentic_evals*", "test_agent*"]
