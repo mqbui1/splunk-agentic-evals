@@ -1,6 +1,6 @@
 # splunk-agentic-evals
 
-Instrumentation-side evaluation library for Splunk AI Agent Monitoring. Runs LLM-as-a-judge evals on your agent spans and emits `gen_ai.evaluation.score` metrics via OpenTelemetry so they appear in Splunk's AI Agents quality charts.
+Instrumentation-side evaluation library for Splunk AI Agent Monitoring. Runs LLM-as-a-judge evals on your agent spans and emits `gen_ai.evaluation.score` metrics via OpenTelemetry. Scores flow into Splunk's metric store where you can build custom charts and dashboards to monitor quality across any eval dimension.
 
 ## How it works
 
@@ -13,7 +13,7 @@ Agent span ends
 GenAIEvalSpanProcessor
   ├── extract input / output from span events
   ├── run enabled evals (judge LLM scores 0.0–1.0)
-  ├── emit gen_ai.evaluation.score metrics → Splunk quality chart
+  ├── emit gen_ai.evaluation.score metrics → Splunk metric store
   ├── normalize span attributes for Splunk compatibility
   └── forward span to downstream exporter (collector / ingest)
 ```
@@ -215,7 +215,7 @@ eval_processor._evaluator.register_eval(
 )
 ```
 
-Custom eval scores appear in Splunk's quality chart under `gen_ai.evaluation.name=conciseness` alongside the built-in evals. You can view them by grouping the `gen_ai.evaluation.score` metric by `gen_ai.evaluation.name` in a custom chart.
+Custom eval scores are emitted as `gen_ai.evaluation.score` with `gen_ai.evaluation.name=conciseness` (or whatever name you set). Since Splunk's built-in AI Agents quality chart only recognizes the standard eval names, custom evals are best surfaced through custom charts and dashboards — query the `gen_ai.evaluation.score` metric and group or filter by `gen_ai.evaluation.name` to visualize any eval alongside agent name, model, and other dimensions.
 
 ## Agent framework support
 
@@ -235,11 +235,13 @@ Evals run on spans where `gen_ai.operation.name` is `invoke_agent` or `invoke_wo
 
 | Metric / attribute | Splunk surface |
 |---|---|
-| `gen_ai.evaluation.score` histogram | AI Agents → quality chart (grouped by `gen_ai.evaluation.name`) |
+| `gen_ai.evaluation.score` histogram | Metric store — build custom charts grouped by `gen_ai.evaluation.name`, `gen_ai.agent.name`, `gen_ai.request.model`, etc. |
 | `gen_ai.evaluation.<name>.score` span attr | APM Trace Analyzer → span detail view |
-| `gen_ai.client.token.usage` histogram | AI Agents → token usage chart |
-| `gen_ai.client.operation.duration` histogram | AI Agents → latency chart |
-| `gen_ai.agent.duration` histogram | AI Agents → agent duration chart |
+| `gen_ai.client.token.usage` histogram | AI Agents page → token usage chart |
+| `gen_ai.client.operation.duration` histogram | AI Agents page → latency chart |
+| `gen_ai.agent.duration` histogram | AI Agents page → agent duration chart |
+
+The `gen_ai.evaluation.score` metric supports any eval name as a dimension, so you can plot built-in and custom evals side by side on the same dashboard. Splunk's built-in AI Agents quality chart recognizes the standard eval names (`hallucination`, `relevance`, etc.) — for custom evals, use a custom chart or dashboard panel.
 
 ## Splunk OTel Collector setup (required)
 
