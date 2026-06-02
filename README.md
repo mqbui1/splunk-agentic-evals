@@ -243,6 +243,23 @@ Evals run on spans where `gen_ai.operation.name` is `invoke_agent` or `invoke_wo
 
 The `gen_ai.evaluation.score` metric supports any eval name as a dimension, so you can plot built-in and custom evals side by side on the same dashboard. Splunk's built-in AI Agents quality chart recognizes the standard eval names (`hallucination`, `relevance`, etc.) — for custom evals, use a custom chart or dashboard panel.
 
+## Limitations
+
+This library uses the Splunk Observability Cloud data path (OTLP → signalfx exporter) and adds instrumentation-side evaluations on top. Per Splunk's documentation, the two data source options have mutually exclusive feature sets — this library does not fit neatly into either bucket.
+
+| Feature | Splunk docs (Obs Cloud path) | This library |
+|---|---|---|
+| Instrumentation-side evaluations | Not supported | **Yes** — core feature |
+| AI Agents / overview page | Yes | **Yes** — via `gen_ai.client.*` histograms through signalfx exporter |
+| AI Trace Data page | Yes | **No** — requires platform-side evaluations (mutually exclusive) |
+| Platform-side evaluations | Yes | **No** — mutually exclusive with instrumentation-side |
+| Cost metrics | Yes | **No** |
+| Risk metrics (Cisco AI Defense) | Yes | **No** |
+
+**What you get:** The AI Agents page (token usage, latency, agent duration charts), eval scores as custom metric dimensions for building dashboards, and eval scores embedded in APM span attributes.
+
+**What you don't get:** AI Trace Data page, platform-side evaluations, cost metrics, and Cisco AI Defense risk metrics. If those features are required, use Splunk's native platform-side evaluation path instead of this library.
+
 ## Splunk OTel Collector setup (required)
 
 Metrics must flow through a Splunk OTel Collector with the `signalfx` exporter to appear in the AI Agents page. Direct OTLP to the Splunk ingest endpoint bypasses the `signalfx` correlation pipeline and the AI Agents charts will not populate.
